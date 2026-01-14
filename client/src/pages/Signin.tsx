@@ -1,5 +1,5 @@
 import  { useState } from 'react';
-import { Link2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Cable, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,7 +27,7 @@ export default function SignIn() {
           animate={{ y: 0, opacity: 1 }}
           className="flex items-center justify-center gap-2 mb-8"
         >
-          <Link2 className="w-10 h-10 text-blue-600" />
+          <Cable className="w-10 h-10 text-blue-600" />
           <span className="text-3xl font-bold text-slate-800">Miny</span>
         </motion.div>
 

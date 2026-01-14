@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Link2,ArrowRight } from 'lucide-react';
+import { Cable,ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function Header(){
@@ -18,7 +18,7 @@ const handleSignin = () => {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link2 className="w-8 h-8 text-blue-600" />
+            <Cable className="w-8 h-8 text-blue-600" />
             <span className="text-2xl font-bold text-slate-800">Miny</span>
           </div>
           <motion.button
