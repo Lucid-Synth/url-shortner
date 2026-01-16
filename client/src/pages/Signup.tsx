@@ -20,7 +20,6 @@ export default function SignUp() {
   };
 
   const handleSignUp = () => {
-    console.log('Sign up:', formData);
 
     axios.post(Base_url+"/signup",formData)
     .then(() => {

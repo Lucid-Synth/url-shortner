@@ -19,13 +19,10 @@ const handleSignIn = async () => {
       password,
     });
 
-    const { token, message } = res.data;
+    const { token } = res.data;
 
     localStorage.setItem("token", token);
     setSignedIn(true);
-
-    console.log(message);
-    console.log("JWT Token:", token);
 
     setTimeout(() => {
       navigate('/url')
