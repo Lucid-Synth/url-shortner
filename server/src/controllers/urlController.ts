@@ -24,7 +24,7 @@ export async function postUrl(req:any,res:any){
     })
 
     res.json({
-        shorturl: `https://mi-ny.onrender.com${shortcode}`
+        shorturl: `https://mi-ny.onrender.com/${shortcode}`
     })
 }
 
