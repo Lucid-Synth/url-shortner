@@ -1,16 +1,35 @@
 import  { useState } from 'react';
-import { Cable, Copy, ExternalLink } from 'lucide-react';
+import { Cable, Copy, ExternalLink, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { Base_url } from '../config/config';
 
-
 export default function URLShortener() {
   const [url, setUrl] = useState('');
   const [shortUrl, setShortUrl] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleShorten = async() => {
-    try{
+    // Reset previous error
+    setError('');
+    
+    // Validate URL length
+    if (url.length < 8) {
+      setError('URL must be at least 8 characters long');
+      return;
+    }
+    
+    // Optional: Additional URL format validation
+    try {
+      new URL(url); // This will throw an error if URL is invalid
+    } catch (err) {
+      setError('Please enter a valid URL (e.g., https://example.com)');
+      return;
+    }
+
+    try {
+      setLoading(true);
       const token = localStorage.getItem("token");
 
       const res = await axios.post(Base_url + "/shorten", {url},
@@ -28,10 +47,12 @@ export default function URLShortener() {
         throw new Error("Short URL has not been recieved from server");
       }
 
-      setShortUrl(shorturl)
-    }
-    catch(error){
-      console.error(error)
+      setShortUrl(shorturl);
+    } catch(error:any) {
+      console.error(error);
+      setError(error.response?.data?.message || 'Failed to shorten URL. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,9 +60,20 @@ export default function URLShortener() {
     navigator.clipboard.writeText(shortUrl);
   };
 
+  // Validate URL as user types (optional)
+  const handleUrlChange = (e:any) => {
+    const value = e.target.value;
+    setUrl(value);
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center px-6">
-      <div className="w-full max-w-2xl">
+      <div className="w-[30%] max-w-2xl">
         {/* Logo */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
@@ -72,20 +104,53 @@ export default function URLShortener() {
               <input
                 type="url"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={handleUrlChange}
                 placeholder="https://example.com/your-long-url-here"
-                className="w-full px-4 py-4 border-2 border-slate-200 rounded-xl outline-none focus:border-blue-600 transition-colors text-slate-800"
+                className={`w-full px-4 py-4 border-2 rounded-xl outline-none focus:border-blue-600 transition-colors text-slate-800 ${
+                  error ? 'border-red-500' : 'border-slate-200'
+                }`}
               />
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 mt-2 text-red-600 text-sm"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{error}</span>
+                </motion.div>
+              )}
             </div>
 
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: url.length >= 8 ? 1.02 : 1 }}
+              whileTap={{ scale: url.length >= 8 ? 0.98 : 1 }}
               onClick={handleShorten}
-              className="w-full py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg shadow-lg hover:bg-blue-700 transition-colors"
+              disabled={loading || url.length < 8}
+              className={`w-full py-4 rounded-xl font-semibold text-lg shadow-lg transition-colors ${
+                url.length >= 8 && !loading
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+              }`}
             >
-              Shorten URL
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Shortening...
+                </div>
+              ) : (
+                'Shorten URL'
+              )}
             </motion.button>
+            
+            {/* URL length hint */}
+            <div className="text-sm text-slate-500 text-right">
+              {url.length > 0 && (
+                <span className={url.length < 8 ? 'text-red-500' : 'text-green-500'}>
+                  {url.length} / 8 characters minimum
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Result */}
@@ -97,7 +162,7 @@ export default function URLShortener() {
             >
               <p className="text-sm text-slate-600 mb-2">Your shortened URL:</p>
               <div className="flex items-center gap-2">
-                <div className="flex-1 px-4 py-3 bg-white rounded-lg border border-slate-200 text-blue-600 font-medium">
+                <div className="flex-1 px-4 py-3 bg-white rounded-lg border border-slate-200 text-blue-600 font-medium truncate">
                   {shortUrl}
                 </div>
                 <motion.button
