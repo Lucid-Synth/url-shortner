@@ -1,4 +1,4 @@
-import  { useState } from 'react';
+import { useState } from 'react';
 import { Cable, Copy, ExternalLink, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
@@ -10,66 +10,82 @@ export default function URLShortener() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleShorten = async() => {
-    // Reset previous error
-    setError('');
-    
-    // Validate URL length
-    if (url.length < 8) {
-      setError('URL must be at least 8 characters long');
-      return;
+  const validateUrl = (value: string) => {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return 'URL cannot be empty';
     }
-    
-    // Optional: Additional URL format validation
+
+    if (trimmed.length < 8) {
+      return 'URL must be at least 8 characters long';
+    }
+
     try {
-      new URL(url); // This will throw an error if URL is invalid
-    } catch (err) {
-      setError('Please enter a valid URL (e.g., https://example.com)');
+      new URL(trimmed);
+    } catch {
+      return 'Please enter a valid URL (e.g., https://example.com)';
+    }
+
+    return '';
+  };
+
+  const handleShorten = async () => {
+    setError('');
+    setShortUrl('');
+
+    const validationError = validateUrl(url);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
 
-      const res = await axios.post(Base_url + "/shorten", {url},
+      const res = await axios.post(
+        `${Base_url}/shorten`,
+        { url: url.trim() },
         {
-          headers:{
+          headers: {
             Authorization: token,
-            "Content-Type":"application/json"
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
 
       const { shorturl } = res.data;
-      
-      if(!shorturl){
-        throw new Error("Short URL has not been recieved from server");
+
+      if (!shorturl) {
+        throw new Error('Short URL was not received from server');
       }
 
       setShortUrl(shorturl);
-    } catch(error:any) {
+    } catch (error: any) {
       console.error(error);
-      setError(error.response?.data?.message || 'Failed to shorten URL. Please try again.');
+      setError(
+        error.response?.data?.message ||
+          'Failed to shorten URL. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(shortUrl);
-  };
-
-  // Validate URL as user types (optional)
-  const handleUrlChange = (e:any) => {
-    const value = e.target.value;
-    setUrl(value);
-    
-    // Clear error when user starts typing
-    if (error) {
-      setError('');
+    if (shortUrl) {
+      navigator.clipboard.writeText(shortUrl);
     }
   };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUrl(e.target.value);
+    if (error) setError('');
+  };
+
+  const isButtonDisabled =
+    loading || url.trim().length === 0 || url.trim().length < 8;
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center px-6">
@@ -84,7 +100,7 @@ export default function URLShortener() {
           <span className="text-3xl font-bold text-slate-800">Miny</span>
         </motion.div>
 
-        {/* Main Card */}
+        {/* Card */}
         <motion.div
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -110,6 +126,7 @@ export default function URLShortener() {
                   error ? 'border-red-500' : 'border-slate-200'
                 }`}
               />
+
               {error && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -123,12 +140,12 @@ export default function URLShortener() {
             </div>
 
             <motion.button
-              whileHover={{ scale: url.length >= 8 ? 1.02 : 1 }}
-              whileTap={{ scale: url.length >= 8 ? 0.98 : 1 }}
+              whileHover={{ scale: !isButtonDisabled ? 1.02 : 1 }}
+              whileTap={{ scale: !isButtonDisabled ? 0.98 : 1 }}
               onClick={handleShorten}
-              disabled={loading || url.length < 8}
+              disabled={isButtonDisabled}
               className={`w-full py-4 rounded-xl font-semibold text-lg shadow-lg transition-colors ${
-                url.length >= 8 && !loading
+                !isButtonDisabled
                   ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
                   : 'bg-slate-300 text-slate-500 cursor-not-allowed'
               }`}
@@ -142,15 +159,19 @@ export default function URLShortener() {
                 'Shorten URL'
               )}
             </motion.button>
-            
-            {/* URL length hint */}
-            <div className="text-sm text-slate-500 text-right">
-              {url.length > 0 && (
-                <span className={url.length < 8 ? 'text-red-500' : 'text-green-500'}>
-                  {url.length} / 8 characters minimum
+
+            {/* Length hint */}
+            {url.length > 0 && (
+              <div className="text-sm text-right">
+                <span
+                  className={
+                    url.trim().length < 8 ? 'text-red-500' : 'text-green-500'
+                  }
+                >
+                  {url.trim().length} / 8 characters minimum
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Result */}
@@ -160,27 +181,32 @@ export default function URLShortener() {
               animate={{ y: 0, opacity: 1 }}
               className="mt-8 p-4 bg-slate-50 rounded-xl"
             >
-              <p className="text-sm text-slate-600 mb-2">Your shortened URL:</p>
+              <p className="text-sm text-slate-600 mb-2">
+                Your shortened URL:
+              </p>
+
               <div className="flex items-center gap-2">
                 <div className="flex-1 px-4 py-3 bg-white rounded-lg border border-slate-200 text-blue-600 font-medium truncate">
                   {shortUrl}
                 </div>
+
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleCopy}
-                  className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   title="Copy to clipboard"
                 >
                   <Copy className="w-5 h-5" />
                 </motion.button>
+
                 <motion.a
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   href={shortUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                  className="p-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700"
                   title="Open link"
                 >
                   <ExternalLink className="w-5 h-5" />
